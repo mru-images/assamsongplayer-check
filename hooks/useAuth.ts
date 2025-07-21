@@ -10,35 +10,40 @@ export function useAuth() {
     let mounted = true
 
     // Get initial session with timeout
-const getInitialSession = async () => {
-  try {
-    const sessionPromise = supabase.auth.getSession();
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Timeout")), 2000)
-    );
+    const getInitialSession = async () => {
+      try {
+        // Set a timeout for the session check
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session timeout')), 5000)
+        )
 
-    const result = await Promise.race([
-      sessionPromise,
-      timeoutPromise,
-    ]) as any;
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any
 
-    const session = result?.data?.session ?? null;
-    const error = result?.error ?? null;
+        if (error) {
+          console.error('Session error:', error)
+          if (mounted) {
+            setUser(null)
+            setLoading(false)
+          }
+          return
+        }
 
-    if (error) {
-      console.error("Error getting session:", error.message);
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Failed to get session:', error)
+        if (mounted) {
+          setUser(null)
+          setLoading(false)
+        }
+      }
     }
-
-    if (mounted) {
-      setUser(session?.user ?? null);  // ✅ Set user early if available
-      setLoading(false);
-    }
-  } catch (err) {
-    console.error("Error fetching session:", err);
-    if (mounted) setLoading(false); // prevent stuck loading
-  }
-};
-
 
     getInitialSession()
 
