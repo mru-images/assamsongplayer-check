@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import React, { useEffect } from 'react'
 import LoginPage from './LoginPage'
-import LoadingSpinner from './LoadingSpinner'
 
 interface AuthWrapperProps {
   children: React.ReactNode
@@ -11,24 +10,24 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const { user, loading } = useAuth()
 
   // Force re-authentication on page reload if no valid session
-  useEffect(() => {
-    const checkAuthOnReload = () => {
-      // Check if this is a page reload
-      const isReload = performance.navigation?.type === 1 || 
-                      performance.getEntriesByType('navigation')[0]?.type === 'reload'
-      
-      if (isReload && !user && !loading) {
-        console.log('Page reloaded without valid session, redirecting to login')
-        // Clear any stale data
-        localStorage.clear()
-        sessionStorage.clear()
-      }
-    }
+useEffect(() => {
+  const checkAuthOnReload = () => {
+    // Cast the navigation entry to the correct type
+    const navEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
 
-    // Small delay to ensure auth state is settled
-    const timer = setTimeout(checkAuthOnReload, 1000)
-    return () => clearTimeout(timer)
-  }, [user, loading])
+    const isReload =
+      performance.navigation?.type === 1 || navEntry?.type === 'reload';
+
+    if (isReload && !user && !loading) {
+      console.log('Page reloaded without valid session, redirecting to login');
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+  };
+
+  const timer = setTimeout(checkAuthOnReload, 1000);
+  return () => clearTimeout(timer);
+}, [user, loading]);
 
   // Show loading spinner with timeout
   if (loading) {
